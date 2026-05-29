@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.pylance",
+    "ritwickdey.LiveServer",
+    "rangav.vscode-thunder-client"
+  ]
+}

@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Job Search Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --bg2:       #13161e;
+      --bg3:       #1a1e28;
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+      --text:      #e8eaf0;
+      --muted:     #7a8099;
+      --accent:    #6c8bff;
+      --accent2:   #3d5aff;
+      --success:   #3ecf8e;
+      --warning:   #f5a623;
+      --danger:    #ff5a5a;
+      --li:        #0a66c2;
+      --nk:        #ff7555;
+      --gg:        #4285f4;
+      --radius:    10px;
+      --radius-lg: 14px;
+      --font:      'DM Sans', system-ui, sans-serif;
+      --mono:      'DM Mono', monospace;
+      --sidebar:   260px;
+    }
+
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; line-height: 1.5; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar); min-height: 100vh; background: var(--bg2);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+    }
+    .sidebar-logo { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); }
+    .logo-mark { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg,#6c8bff,#3d5aff); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .nav { padding: 12px 10px; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: var(--radius); cursor: pointer; color: var(--muted);
+      font-size: 13px; font-weight: 500; transition: all .15s; margin-bottom: 2px;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--bg3); color: var(--text); }
+    .nav-item.active { background: rgba(108,139,255,0.15); color: var(--accent); }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+    .api-status { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); transition: background .3s; }
+    .status-dot.online { background: var(--success); }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 5; }
+    .topbar-title { font-size: 16px; font-weight: 600; }
+    .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .content { padding: 28px; flex: 1; }
+
+    /* ── Sections ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Cards ── */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 16px; }
+    .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
+
+    /* ── Form elements ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+    .field input, .field select, .field textarea {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius); padding: 9px 12px;
+      font-family: var(--font); font-size: 13px; transition: border-color .15s;
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    .field select option { background: var(--bg3); }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; border: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+    .btn-ghost:hover { background: var(--bg3); }
+    .btn-danger { background: rgba(255,90,90,.15); color: var(--danger); border: 1px solid rgba(255,90,90,.2); }
+    .btn-success { background: rgba(62,207,142,.12); color: var(--success); border: 1px solid rgba(62,207,142,.2); }
+
+    /* ── Pills ── */
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border2); cursor: pointer; background: var(--bg3); color: var(--muted);
+      transition: all .15s; user-select: none;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--text); }
+    .pill.on { background: rgba(108,139,255,.18); color: var(--accent); border-color: rgba(108,139,255,.4); }
+
+    /* ── Badges ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .badge-green  { background: rgba(62,207,142,.15);  color: var(--success); }
+    .badge-orange { background: rgba(245,166,35,.15);  color: var(--warning); }
+    .badge-red    { background: rgba(255,90,90,.15);   color: var(--danger);  }
+    .badge-blue   { background: rgba(108,139,255,.15); color: var(--accent);  }
+
+    /* ── Stats ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+    .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+    .stat-val { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-change { font-size: 11px; margin-top: 6px; }
+
+    /* ── Search bar ── */
+    .search-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .search-input-wrap { flex: 1; position: relative; min-width: 220px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
+    .search-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 9px 12px 9px 36px; font-family: var(--font); font-size: 13px; outline: none; transition: border-color .15s; }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-select { background: var(--bg2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 9px 12px; font-family: var(--font); font-size: 13px; outline: none; cursor: pointer; }
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* ── Job cards ── */
+    .jobs-grid { display: flex; flex-direction: column; gap: 12px; }
+    .job-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px 20px;
+      transition: border-color .15s, transform .1s;
+      cursor: default;
+    }
+    .job-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+    .job-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .job-info { flex: 1; }
+    .job-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .job-company { font-size: 13px; color: var(--muted); }
+    .job-meta { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+    .job-meta-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .match-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .match-bar-wrap { flex: 1; max-width: 160px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+    .match-bar-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+    .match-label { font-size: 12px; font-weight: 600; }
+    .skill-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .skill-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+    .job-actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; flex-wrap: wrap; }
+    .platform-dot { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 5px; font-size: 9px; font-weight: 700; color: #fff; }
+    .platform-dot.li { background: var(--li); }
+    .platform-dot.nk { background: var(--nk); }
+    .platform-dot.gg { background: var(--gg); }
+
+    /* ── Empty & loading ── */
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty h3 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state { display: flex; align-items: center; gap: 10px; padding: 24px; color: var(--muted); font-size: 13px; }
+
+    /* ── Tracker table ── */
+    .tracker-table { width: 100%; border-collapse: collapse; }
+    .tracker-table th { font-size: 11px; color: var(--muted); font-weight: 500; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .05em; }
+    .tracker-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+    .tracker-table tr:last-child td { border-bottom: none; }
+    .tracker-table tr:hover td { background: var(--bg3); }
+
+    /* ── Cover letter ── */
+    .cover-output { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; font-size: 13px; line-height: 1.8; color: var(--text); white-space: pre-wrap; max-height: 420px; overflow-y: auto; font-family: var(--mono); }
+
+    /* ── Auto apply log ── */
+    .apply-log-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; animation: fadeIn .3s ease; }
+    .apply-log-item:last-child { border-bottom: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast-msg { background: var(--bg2); border: 1px solid var(--border2); color: var(--text); padding: 10px 16px; border-radius: var(--radius); font-size: 13px; display: flex; align-items: center; gap: 8px; animation: slideUp .25s ease; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Results header ── */
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .results-count { font-size: 12px; color: var(--muted); }
+
+    /* ── API config panel ── */
+    .api-panel { background: rgba(108,139,255,.08); border: 1px solid rgba(108,139,255,.2); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; font-size: 12px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .api-url { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+    /* ── Divider ── */
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .section-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">💼</div>
+      <div>
+        <div class="logo-text">JobAI</div>
+        <div class="logo-sub">Smart job search</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-item active" onclick="goTo('profile',this)">
+      <span class="icon">👤</span> My Profile
+    </button>
+    <button class="nav-item" onclick="goTo('search',this)">
+      <span class="icon">🔍</span> Search Jobs
+      <span class="nav-badge" id="badge-search">0</span>
+    </button>
+    <button class="nav-item" onclick="goTo('apply',this)">
+      <span class="icon">🚀</span> Auto Apply
+    </button>
+    <button class="nav-item" onclick="goTo('tracker',this)">
+      <span class="icon">📊</span> Tracker
+      <span class="nav-badge" id="badge-tracker">0</span>
+    </button>
+    <button class="nav-item" onclick="goTo('cover',this)">
+      <span class="icon">✉️</span> Cover Letter
+    </button>
+    <button class="nav-item" onclick="goTo('settings',this)">
+      <span class="icon">⚙️</span> Settings
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="api-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-label">Checking API...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="page-title">My Profile</div>
+      <div class="topbar-sub" id="page-sub">Set up your job preferences</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="clearCache()" title="Clear cache">🗑 Clear cache</button>
+      <button class="btn btn-primary" onclick="goTo('search',null);liveSearch()">🔍 Search now</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ PROFILE ═══ -->
+    <div class="section active" id="sec-profile">
+      <div class="card">
+        <div class="card-title">Personal info</div>
+        <div class="form-grid">
+          <div class="field"><label>Full name</label><input id="p-name" placeholder="Rahul Sharma" /></div>
+          <div class="field"><label>Current title</label><input id="p-role" placeholder="Senior Frontend Engineer" /></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Email</label><input id="p-email" type="email" placeholder="rahul@email.com" /></div>
+          <div class="field"><label>Phone</label><input id="p-phone" placeholder="+91 99999 00000" /></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Job preferences</div>
+        <div class="form-grid">
+          <div class="field"><label>Experience</label>
+            <select id="p-exp">
+              <option>0-1 years</option><option>1-3 years</option>
+              <option selected>3-5 years</option><option>5-10 years</option><option>10+ years</option>
+            </select>
+          </div>
+          <div class="field"><label>Expected CTC (LPA)</label><input id="p-ctc" placeholder="25–35 LPA" /></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Preferred locations</label><input id="p-loc" placeholder="Pune, Bengaluru, Remote" /></div>
+          <div class="field"><label>Notice period</label>
+            <select id="p-notice">
+              <option>Immediate</option><option>15 days</option><option selected>30 days</option><option>60 days</option><option>90 days</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Target job titles (comma-separated)</label>
+          <input id="p-titles" placeholder="Senior Frontend Engineer, Full Stack Developer, React Lead" />
+        </div>
+        <div class="field">
+          <label>Skills (comma-separated)</label>
+          <input id="p-skills" placeholder="React, TypeScript, Node.js, AWS, Python, GraphQL" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Professional summary</div>
+        <div class="field">
+          <label>Bio / summary</label>
+          <textarea id="p-bio" placeholder="Brief summary of your experience, achievements and what you're looking for..."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Target platforms</div>
+        <div class="pills" id="platform-pills">
+          <span class="pill on" data-platform="linkedin">🔵 LinkedIn</span>
+          <span class="pill on" data-platform="naukri">🟠 Naukri.com</span>
+          <span class="pill on" data-platform="google">🔴 Google Jobs</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveProfile()">💾 Save profile</button>
+    </div>
+
+    <!-- ═══ SEARCH ═══ -->
+    <div class="section" id="sec-search">
+      <div class="api-panel">
+        <span>🔗 Connected to backend at <span class="api-url" id="api-url-display">http://localhost:8000</span></span>
+        <span id="api-ping" style="font-size:11px;color:var(--muted)">Checking...</span>
+      </div>
+
+      <!-- Timeframe quick-select -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Posted within:</span>
+        <div class="pills" id="timeframe-pills">
+          <span class="pill" data-tf="24h" onclick="selectTimeframe(this)">⚡ Last 24 hours</span>
+          <span class="pill" data-tf="3d"  onclick="selectTimeframe(this)">📅 Last 3 days</span>
+          <span class="pill on" data-tf="1w"  onclick="selectTimeframe(this)">📆 This week</span>
+          <span class="pill" data-tf="1m"  onclick="selectTimeframe(this)">🗓 This month</span>
+          <span class="pill" data-tf="any" onclick="selectTimeframe(this)">🌐 Any time</span>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="s-query" placeholder="Job title, skill or company…" onkeydown="if(event.key==='Enter')liveSearch()" />
+        </div>
+        <input class="search-input" id="s-location" placeholder="Location" style="width:150px" onkeydown="if(event.key==='Enter')liveSearch()" />
+        <select class="filter-select" id="s-exp">
+          <option>Any experience</option><option>0-1 years</option><option>1-3 years</option>
+          <option selected>3-5 years</option><option>5-10 years</option><option>10+ years</option>
+        </select>
+        <select class="filter-select" id="s-type">
+          <option>All types</option><option>Full-time</option><option>Remote</option><option>Hybrid</option>
+        </select>
+        <button class="btn btn-primary" id="search-btn" onclick="liveSearch()">Search</button>
+      </div>
+
+      <div id="search-state"></div>
+
+      <div id="search-results" style="display:none">
+        <div class="results-header">
+          <span class="results-count" id="results-count"></span>
+          <select class="filter-select" onchange="sortResults(this.value)" style="font-size:12px;padding:6px 10px">
+            <option value="match">Sort: Best match</option>
+            <option value="date">Sort: Newest</option>
+          </select>
+        </div>
+        <div class="jobs-grid" id="jobs-container"></div>
+      </div>
+    </div>
+
+    <!-- ═══ AUTO APPLY ═══ -->
+    <div class="section" id="sec-apply">
+      <div class="card">
+        <div class="card-title">Auto-apply settings</div>
+        <div class="form-grid">
+          <div class="field"><label>Minimum match score</label>
+            <select id="a-minscore"><option>60%+</option><option selected>75%+</option><option>85%+</option><option>90%+</option></select>
+          </div>
+          <div class="field"><label>Max applications / day</label>
+            <select id="a-maxday"><option>5</option><option selected>10</option><option>20</option><option>Unlimited</option></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Blocklist companies</label><input id="a-block" placeholder="e.g. CompanyX, CompanyY" /></div>
+          <div class="field"><label>Job type</label>
+            <select id="a-type"><option>Any</option><option selected>Full-time</option><option>Remote only</option><option>Full-time + Remote</option></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Only apply to jobs posted within</label>
+            <select id="a-timeframe">
+              <option value="24h">Last 24 hours</option>
+              <option value="3d" selected>Last 3 days</option>
+              <option value="1w">This week</option>
+              <option value="1m">This month</option>
+              <option value="any">Any time</option>
+            </select>
+          </div>
+          <div class="field"><label>Min match score to auto-apply</label>
+            <select id="a-minscore2"><option>60%+</option><option selected>75%+</option><option>85%+</option><option>90%+</option></select>
+          </div>
+        </div>
+        <hr class="divider" />
+        <div class="section-actions">
+          <button class="btn btn-primary" id="auto-btn" onclick="startAutoApply()">🚀 Start auto-apply</button>
+          <button class="btn btn-ghost" onclick="pauseAutoApply()">⏸ Pause</button>
+          <span id="auto-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+      </div>
+
+      <div class="card" id="apply-log-card" style="display:none">
+        <div class="card-title" style="margin-bottom:12px">Application log</div>
+        <div id="apply-log"></div>
+      </div>
+
+      <div class="card" style="background:rgba(108,139,255,.06);border-color:rgba(108,139,255,.2)">
+        <div class="card-title">How auto-apply works</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">
+          Auto-apply pulls live jobs from LinkedIn, Naukri and Google Jobs matching your profile, scores each against your skills and target titles,
+          then simulates submitting applications for all jobs above your match threshold — logging every action. In production, integrate with each
+          platform's official apply API or browser automation for real submissions.
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══ TRACKER ═══ -->
+    <div class="section" id="sec-tracker">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-val" id="t-applied" style="color:var(--accent)">0</div>
+          <div class="stat-label">Applied</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="t-shortlisted" style="color:var(--warning)">0</div>
+          <div class="stat-label">Shortlisted</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="t-interview" style="color:var(--success)">0</div>
+          <div class="stat-label">Interviews</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="t-offer" style="color:#ff9f40">0</div>
+          <div class="stat-label">Offers</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Application history</div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="exportTracker()">⬇ Export CSV</button>
+        </div>
+        <table class="tracker-table" id="tracker-table">
+          <thead>
+            <tr>
+              <th>Platform</th><th>Company</th><th>Role</th><th>Location</th><th>Salary</th><th>Date</th><th>Status</th><th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="tracker-body">
+            <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No applications yet — search and apply to get started.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ COVER LETTER ═══ -->
+    <div class="section" id="sec-cover">
+      <div class="card">
+        <div class="card-title">Generate tailored cover letter (AI-powered)</div>
+        <div class="form-grid">
+          <div class="field"><label>Job title</label><input id="cl-title" placeholder="Senior Frontend Engineer" /></div>
+          <div class="field"><label>Company</label><input id="cl-company" placeholder="Razorpay" /></div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Job description / key requirements</label>
+          <textarea id="cl-jd" placeholder="Paste the job description or key requirements here…" style="min-height:100px"></textarea>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="card-title" style="margin-bottom:8px">Tone</div>
+          <div class="pills" id="tone-pills">
+            <span class="pill on" data-tone="professional">Professional</span>
+            <span class="pill" data-tone="enthusiastic">Enthusiastic</span>
+            <span class="pill" data-tone="concise">Concise</span>
+            <span class="pill" data-tone="creative">Creative</span>
+          </div>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-primary" id="cover-btn" onclick="generateCover()">✨ Generate cover letter</button>
+          <button class="btn btn-ghost" id="copy-btn" onclick="copyLetter()" style="display:none">📋 Copy</button>
+        </div>
+      </div>
+
+      <div id="cover-loading" style="display:none" class="loading-state">
+        <div class="spinner"></div> Writing your personalised cover letter…
+      </div>
+
+      <div class="card" id="cover-result" style="display:none">
+        <div class="card-title">Generated cover letter</div>
+        <div class="cover-output" id="cover-text"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS ═══ -->
+    <div class="section" id="sec-settings">
+      <div class="card">
+        <div class="card-title">Backend API</div>
+        <div class="form-grid">
+          <div class="field"><label>API base URL</label><input id="cfg-api" value="http://localhost:8000" /></div>
+          <div class="field"><label>SerpAPI key (optional)</label><input id="cfg-serpapi" placeholder="Get free key at serpapi.com" /></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save settings</button>
+        <button class="btn btn-ghost" style="margin-left:8px" onclick="testConnection()">🔌 Test connection</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Anthropic API (cover letters)</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+          Cover letter generation uses the Anthropic Claude API directly from the browser. No key needed when running inside Claude.ai.
+          When running standalone, add your API key below.
+        </p>
+        <div class="field">
+          <label>Anthropic API key (leave blank when running in Claude.ai)</label>
+          <input id="cfg-anthropic" placeholder="sk-ant-..." type="password" />
+        </div>
+        <button class="btn btn-ghost" style="margin-top:10px" onclick="saveSettings()">💾 Save</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Data</div>
+        <div class="section-actions">
+          <button class="btn btn-danger" onclick="if(confirm('Clear all tracker data?')){trackerData=[];renderTracker();updateStats();toast('Tracker cleared','🗑');}">🗑 Clear tracker</button>
+          <button class="btn btn-ghost" onclick="exportTracker()">⬇ Export CSV</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const CFG = {
+  apiBase: localStorage.getItem('cfg_api') || 'http://localhost:8000',
+  serpapi: localStorage.getItem('cfg_serpapi') || '',
+  anthropic: localStorage.getItem('cfg_anthropic') || '',
+};
+const PAGE_META = {
+  profile:  ['My Profile',   'Set up your job preferences'],
+  search:   ['Search Jobs',  'Find live matching jobs'],
+  apply:    ['Auto Apply',   'Automatically apply to matching jobs'],
+  tracker:  ['Tracker',      'Track your application status'],
+  cover:    ['Cover Letter', 'AI-generated personalised cover letters'],
+  settings: ['Settings',     'Configure API endpoints and keys'],
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentJobs = [];
+let trackerData = JSON.parse(localStorage.getItem('tracker') || '[]');
+let appliedIds  = new Set(JSON.parse(localStorage.getItem('applied') || '[]'));
+let autoRunning = false;
+let autoTimer   = null;
+let selectedTone      = 'professional';
+let selectedTimeframe = '1w';   // default: this week
+
+// ─── Timeframe selector ───────────────────────────────────────────────────────
+function selectTimeframe(el) {
+  document.querySelectorAll('#timeframe-pills .pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  selectedTimeframe = el.dataset.tf;
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function goTo(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id.split('')[0])) {} // skip
+  });
+  const [title, sub] = PAGE_META[id] || ['', ''];
+  document.getElementById('page-title').textContent = title;
+  document.getElementById('page-sub').textContent   = sub;
+  if (id === 'tracker') renderTracker();
+  if (id === 'search')  checkApiStatus();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, icon = 'ℹ️') {
+  const el = document.createElement('div');
+  el.className = 'toast-msg';
+  el.innerHTML = `${icon} ${msg}`;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+document.getElementById('platform-pills').querySelectorAll('.pill').forEach(p =>
+  p.addEventListener('click', () => p.classList.toggle('on'))
+);
+document.getElementById('tone-pills').querySelectorAll('.pill').forEach(p =>
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#tone-pills .pill').forEach(x => x.classList.remove('on'));
+    p.classList.add('on');
+    selectedTone = p.dataset.tone;
+  })
+);
+
+function getProfile() {
+  return {
+    name:   document.getElementById('p-name').value   || 'Candidate',
+    role:   document.getElementById('p-role').value   || '',
+    email:  document.getElementById('p-email').value  || '',
+    phone:  document.getElementById('p-phone').value  || '',
+    exp:    document.getElementById('p-exp').value    || '3-5 years',
+    ctc:    document.getElementById('p-ctc').value    || '',
+    loc:    document.getElementById('p-loc').value    || 'India',
+    notice: document.getElementById('p-notice').value || '30 days',
+    titles: document.getElementById('p-titles').value || '',
+    skills: document.getElementById('p-skills').value || '',
+    bio:    document.getElementById('p-bio').value    || '',
+    platforms: [...document.querySelectorAll('#platform-pills .pill.on')].map(p => p.dataset.platform),
+  };
+}
+
+function saveProfile() {
+  localStorage.setItem('profile', JSON.stringify(getProfile()));
+  toast('Profile saved!', '✅');
+}
+
+function loadProfile() {
+  const p = JSON.parse(localStorage.getItem('profile') || '{}');
+  if (!p.name) return;
+  ['name','role','email','phone','ctc','loc','titles','skills','bio'].forEach(k => {
+    const el = document.getElementById('p-' + k);
+    if (el && p[k]) el.value = p[k];
+  });
+  if (p.exp)    document.getElementById('p-exp').value    = p.exp;
+  if (p.notice) document.getElementById('p-notice').value = p.notice;
+  if (p.platforms) {
+    document.querySelectorAll('#platform-pills .pill').forEach(pill => {
+      pill.classList.toggle('on', p.platforms.includes(pill.dataset.platform));
+    });
+  }
+}
+
+// ─── API status ───────────────────────────────────────────────────────────────
+async function checkApiStatus() {
+  const dot   = document.getElementById('status-dot');
+  const label = document.getElementById('status-label');
+  const ping  = document.getElementById('api-ping');
+  try {
+    const t0 = Date.now();
+    const r  = await fetch(`${CFG.apiBase}/health`, { signal: AbortSignal.timeout(4000) });
+    const ms = Date.now() - t0;
+    if (r.ok) {
+      dot.classList.add('online');
+      label.textContent = 'API online';
+      if (ping) ping.textContent = `${ms}ms`;
+      document.getElementById('api-url-display').textContent = CFG.apiBase;
+    } else { throw new Error('not ok'); }
+  } catch {
+    dot.classList.remove('online');
+    label.textContent = 'API offline — start backend';
+    if (ping) ping.textContent = 'offline';
+  }
+}
+
+// ─── Job search ───────────────────────────────────────────────────────────────
+async function liveSearch() {
+  const profile  = getProfile();
+  const keyword  = document.getElementById('s-query').value.trim()    || profile.titles.split(',')[0]?.trim() || 'Software Engineer';
+  const location = document.getElementById('s-location').value.trim() || profile.loc.split(',')[0]?.trim()   || 'India';
+  const exp      = document.getElementById('s-exp').value;
+
+  const platforms = profile.platforms.join(',') || 'linkedin,naukri,google';
+  const skills    = profile.skills;
+  const titles    = profile.titles;
+  const timeframe = selectedTimeframe;
+
+  const tfLabels = { '24h':'last 24 hours', '3d':'last 3 days', '1w':'this week', '1m':'this month', 'any':'any time' };
+
+  goTo('search', document.querySelector('.nav-item:nth-child(2)'));
+
+  const state   = document.getElementById('search-state');
+  const results = document.getElementById('search-results');
+  results.style.display = 'none';
+  state.innerHTML = `<div class="loading-state"><div class="spinner"></div>Fetching jobs posted in <strong>${tfLabels[timeframe]}</strong> from ${platforms} for "<strong>${keyword}</strong>" in ${location}…</div>`;
+
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true; btn.textContent = 'Searching…';
+
+  try {
+    const params = new URLSearchParams({ keyword, location, experience: exp, platforms, skills, titles, timeframe });
+    if (CFG.serpapi) params.set('serpapi_key', CFG.serpapi);
+
+    const r    = await fetch(`${CFG.apiBase}/jobs/search?${params}`, { signal: AbortSignal.timeout(20000) });
+    if (!r.ok) throw new Error(`API error ${r.status}`);
+    const data = await r.json();
+    currentJobs = data.jobs || [];
+
+    state.innerHTML = '';
+    results.style.display = 'block';
+
+    const skippedNote = data.skipped_by_date > 0
+      ? ` · <span style="color:var(--warning)">${data.skipped_by_date} older jobs filtered out</span>`
+      : '';
+    document.getElementById('results-count').innerHTML =
+      `<strong>${currentJobs.length}</strong> jobs posted in <strong>${tfLabels[timeframe]}</strong> across ${data.platforms?.join(', ')} — sorted by AI match${skippedNote}`;
+    document.getElementById('badge-search').textContent = currentJobs.length;
+    renderJobs(currentJobs);
+    toast(`Found ${currentJobs.length} jobs from ${tfLabels[timeframe]}!`, '🎯');
+  } catch (err) {
+    state.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>Could not reach backend</h3><p>Make sure the Python backend is running:<br><code style="font-family:monospace;font-size:12px;color:var(--accent)">cd backend && uvicorn main:app --reload --port 8000</code></p></div>`;
+    toast('Backend offline — see instructions', '❌');
+  }
+  btn.disabled = false; btn.textContent = 'Search';
+}
+
+function matchColor(m) {
+  if (m >= 85) return '#3ecf8e';
+  if (m >= 70) return '#f5a623';
+  return '#ff5a5a';
+}
+function matchBadgeClass(m) {
+  if (m >= 85) return 'badge-green';
+  if (m >= 70) return 'badge-orange';
+  return 'badge-red';
+}
+function platformDot(code) {
+  return `<span class="platform-dot ${code}">${code === 'li' ? 'in' : code === 'nk' ? 'N' : 'G'}</span>`;
+}
+
+function renderJobs(jobs) {
+  const c = document.getElementById('jobs-container');
+  if (!jobs.length) {
+    c.innerHTML = `<div class="empty"><div class="empty-icon">🔎</div><h3>No jobs found</h3><p>Try a different keyword or location.</p></div>`;
+    return;
+  }
+  c.innerHTML = jobs.map(j => {
+    const applied = appliedIds.has(j.id);
+    const mc      = matchColor(j.match);
+    const skills  = (j.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
+    return `<div class="job-card" id="jc-${j.id}">
+      <div class="job-card-top">
+        <div class="job-info">
+          <div class="job-title">${j.title}</div>
+          <div class="job-company">${j.company}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${platformDot(j.platform_code)}
+          <span class="badge ${matchBadgeClass(j.match)}">${j.match}% match</span>
+        </div>
+      </div>
+      <div class="job-meta">
+        <span class="job-meta-item">📍 ${j.location}</span>
+        <span class="job-meta-item">💼 ${j.type}</span>
+        ${j.salary && j.salary !== 'Not listed' ? `<span class="job-meta-item">💰 ${j.salary}</span>` : ''}
+        <span class="job-meta-item">🕐 ${j.posted}</span>
+      </div>
+      ${skills ? `<div class="skill-tags">${skills}</div>` : ''}
+      <div class="match-row">
+        <div class="match-bar-wrap"><div class="match-bar-fill" style="width:${j.match}%;background:${mc}"></div></div>
+        <span class="match-label" style="color:${mc}">${j.match}%</span>
+        <span style="font-size:11px;color:var(--muted)">AI match</span>
+      </div>
+      <div class="job-actions">
+        ${applied
+          ? `<span class="badge badge-green">✅ Applied</span>`
+          : `<button class="btn btn-primary" style="font-size:12px;padding:6px 14px" onclick="applyJob('${j.id}')">Apply now</button>`}
+        <a href="${j.link}" target="_blank" rel="noopener" class="btn btn-ghost" style="font-size:12px;padding:6px 14px">View job ↗</a>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="prefillCover('${j.id}')">✉️ Cover letter</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function sortResults(by) {
+  let sorted = [...currentJobs];
+  if (by === 'match') sorted.sort((a,b) => b.match - a.match);
+  renderJobs(sorted);
+}
+
+// ─── Apply ────────────────────────────────────────────────────────────────────
+function applyJob(id) {
+  const j = currentJobs.find(x => x.id === id);
+  if (!j || appliedIds.has(id)) return;
+  appliedIds.add(id);
+  localStorage.setItem('applied', JSON.stringify([...appliedIds]));
+  addToTracker(j, 'Applied');
+  renderJobs(currentJobs);
+  document.getElementById('badge-tracker').textContent = trackerData.length;
+  toast(`Applied to ${j.title} at ${j.company}`, '✅');
+}
+
+function addToTracker(job, status) {
+  trackerData.unshift({
+    id:       job.id,
+    platform: job.platform,
+    code:     job.platform_code,
+    company:  job.company,
+    title:    job.title,
+    location: job.location,
+    salary:   job.salary || 'N/A',
+    link:     job.link,
+    date:     new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}),
+    status,
+  });
+  localStorage.setItem('tracker', JSON.stringify(trackerData));
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('t-applied').textContent     = trackerData.length;
+  document.getElementById('t-shortlisted').textContent = trackerData.filter(t => t.status === 'Shortlisted').length;
+  document.getElementById('t-interview').textContent   = trackerData.filter(t => t.status === 'Interview').length;
+  document.getElementById('t-offer').textContent       = trackerData.filter(t => t.status === 'Offer').length;
+  document.getElementById('badge-tracker').textContent = trackerData.length;
+}
+
+function renderTracker() {
+  const tbody = document.getElementById('tracker-body');
+  if (!trackerData.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No applications yet.</td></tr>`;
+    return;
+  }
+  const statusColors = { Applied:'badge-blue', Shortlisted:'badge-orange', Interview:'badge-green', Offer:'badge-green', Rejected:'badge-red' };
+  tbody.innerHTML = trackerData.map((t,i) => `
+    <tr>
+      <td>${platformDot(t.code)} <span style="font-size:11px;color:var(--muted);margin-left:4px">${t.platform}</span></td>
+      <td style="font-weight:500">${t.company}</td>
+      <td style="color:var(--muted)">${t.title}</td>
+      <td style="color:var(--muted)">${t.location}</td>
+      <td style="color:var(--muted)">${t.salary !== 'Not listed' ? t.salary : '—'}</td>
+      <td style="color:var(--muted);font-size:12px">${t.date}</td>
+      <td>
+        <select class="filter-select" style="font-size:11px;padding:3px 6px" onchange="updateStatus(${i},this.value)">
+          ${['Applied','Shortlisted','Interview','Offer','Rejected'].map(s =>
+            `<option ${s===t.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td><a href="${t.link}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px">View ↗</a></td>
+    </tr>`).join('');
+  updateStats();
+}
+
+function updateStatus(i, status) {
+  trackerData[i].status = status;
+  localStorage.setItem('tracker', JSON.stringify(trackerData));
+  updateStats();
+}
+
+function exportTracker() {
+  const rows = [['Platform','Company','Role','Location','Salary','Date','Status','Link']];
+  trackerData.forEach(t => rows.push([t.platform, t.company, t.title, t.location, t.salary, t.date, t.status, t.link]));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'job_applications.csv';
+  a.click();
+  toast('CSV exported!', '⬇️');
+}
+
+// ─── Auto Apply ───────────────────────────────────────────────────────────────
+async function startAutoApply() {
+  if (autoRunning) return;
+
+  // If no jobs loaded yet, fetch first with the auto-apply timeframe
+  const autoTf = document.getElementById('a-timeframe')?.value || '3d';
+  if (!currentJobs.length) {
+    toast('Fetching jobs for auto-apply…', '🔄');
+    // temporarily set timeframe pill to match auto-apply setting
+    const prevTf = selectedTimeframe;
+    selectedTimeframe = autoTf;
+    document.querySelectorAll('#timeframe-pills .pill').forEach(p => {
+      p.classList.toggle('on', p.dataset.tf === autoTf);
+    });
+    goTo('search', document.querySelector('.nav-item:nth-child(2)'));
+    await liveSearch();
+    goTo('apply', document.querySelector('.nav-item:nth-child(3)'));
+  }
+
+  autoRunning = true;
+  document.getElementById('auto-btn').disabled = true;
+  document.getElementById('auto-status').textContent = 'Running…';
+
+  const minScore  = parseInt(document.getElementById('a-minscore').value) || 75;
+  const maxDay    = parseInt(document.getElementById('a-maxday').value)    || 10;
+  const blocklist = document.getElementById('a-block').value.toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+  const tfLabels  = { '24h':'last 24h', '3d':'last 3 days', '1w':'this week', '1m':'this month', 'any':'any time' };
+
+  const eligible = currentJobs.filter(j =>
+    j.match >= minScore &&
+    !appliedIds.has(j.id) &&
+    !blocklist.some(b => j.company.toLowerCase().includes(b))
+  ).slice(0, maxDay);
+
+  const logCard = document.getElementById('apply-log-card');
+  const logDiv  = document.getElementById('apply-log');
+  logCard.style.display = 'block';
+  logDiv.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-bottom:10px">
+    Applying to <strong>${eligible.length}</strong> jobs posted in <strong>${tfLabels[autoTf]}</strong> with ≥${minScore}% match
+  </p>`;
+
+  for (let i = 0; i < eligible.length; i++) {
+    if (!autoRunning) break;
+    await new Promise(r => setTimeout(r, 900));
+    const j = eligible[i];
+    appliedIds.add(j.id);
+    localStorage.setItem('applied', JSON.stringify([...appliedIds]));
+    addToTracker(j, 'Applied');
+
+    const row = document.createElement('div');
+    row.className = 'apply-log-item';
+    row.innerHTML = `
+      <span style="color:var(--success);font-size:16px">✅</span>
+      ${platformDot(j.platform_code)}
+      <span style="flex:1"><strong>${j.title}</strong> at ${j.company}</span>
+      <span style="font-size:11px;color:var(--muted)">${j.posted}</span>
+      <span class="badge ${matchBadgeClass(j.match)}">${j.match}%</span>
+      <a href="${j.link}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px">View ↗</a>`;
+    logDiv.appendChild(row);
+
+    document.getElementById('auto-status').textContent = `Applied ${i+1} / ${eligible.length}`;
+  }
+
+  autoRunning = false;
+  document.getElementById('auto-btn').disabled = false;
+  document.getElementById('auto-status').textContent = `Done — ${eligible.length} applications sent`;
+  document.getElementById('badge-tracker').textContent = trackerData.length;
+  renderJobs(currentJobs);
+  toast(`Auto-apply complete: ${eligible.length} jobs applied!`, '🚀');
+}
+
+function pauseAutoApply() {
+  autoRunning = false;
+  document.getElementById('auto-btn').disabled = false;
+  document.getElementById('auto-status').textContent = 'Paused';
+}
+
+// ─── Cover Letter ─────────────────────────────────────────────────────────────
+function prefillCover(id) {
+  const j = currentJobs.find(x => x.id === id);
+  if (!j) return;
+  document.getElementById('cl-title').value   = j.title;
+  document.getElementById('cl-company').value = j.company;
+  document.getElementById('cl-jd').value      = (j.skills || []).join(', ') + (j.description ? '\n\n' + j.description : '');
+  goTo('cover', document.querySelector('.nav-item:nth-child(5)'));
+  generateCover();
+}
+
+async function generateCover() {
+  const profile  = getProfile();
+  const title    = document.getElementById('cl-title').value   || 'Software Engineer';
+  const company  = document.getElementById('cl-company').value || 'the company';
+  const jd       = document.getElementById('cl-jd').value      || '';
+
+  document.getElementById('cover-loading').style.display = 'block';
+  document.getElementById('cover-result').style.display  = 'none';
+  document.getElementById('cover-btn').disabled = true;
+  document.getElementById('copy-btn').style.display = 'none';
+
+  const prompt = `Write a ${selectedTone} cover letter for ${profile.name} applying for ${title} at ${company}.
+Skills: ${profile.skills}. Experience: ${profile.exp}. ${profile.bio ? 'Background: ' + profile.bio : ''}
+Job requirements: ${jd || 'standard ' + title + ' role'}
+Keep it under 250 words, no placeholders, professional and ready to send.`;
+
+  try {
+    const apiKey = CFG.anthropic;
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await r.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'Error: no response.';
+    document.getElementById('cover-text').textContent = text;
+    document.getElementById('cover-result').style.display = 'block';
+    document.getElementById('copy-btn').style.display = 'inline-flex';
+    toast('Cover letter generated!', '✨');
+  } catch (e) {
+    document.getElementById('cover-text').textContent = 'Error: ' + e.message;
+    document.getElementById('cover-result').style.display = 'block';
+  }
+  document.getElementById('cover-loading').style.display = 'none';
+  document.getElementById('cover-btn').disabled = false;
+}
+
+function copyLetter() {
+  navigator.clipboard.writeText(document.getElementById('cover-text').textContent)
+    .then(() => toast('Copied to clipboard!', '📋'))
+    .catch(() => toast('Could not copy', '❌'));
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function saveSettings() {
+  CFG.apiBase    = document.getElementById('cfg-api').value.trim()      || 'http://localhost:8000';
+  CFG.serpapi    = document.getElementById('cfg-serpapi').value.trim()   || '';
+  CFG.anthropic  = document.getElementById('cfg-anthropic').value.trim() || '';
+  localStorage.setItem('cfg_api',      CFG.apiBase);
+  localStorage.setItem('cfg_serpapi',  CFG.serpapi);
+  localStorage.setItem('cfg_anthropic',CFG.anthropic);
+  document.getElementById('api-url-display').textContent = CFG.apiBase;
+  toast('Settings saved!', '⚙️');
+}
+
+async function testConnection() {
+  try {
+    const r = await fetch(`${CFG.apiBase}/health`, { signal: AbortSignal.timeout(4000) });
+    if (r.ok) toast('Backend connected ✅', '🟢');
+    else toast(`Backend returned ${r.status}`, '⚠️');
+  } catch { toast('Cannot reach backend', '❌'); }
+}
+
+async function clearCache() {
+  try {
+    await fetch(`${CFG.apiBase}/cache`, { method: 'DELETE' });
+    toast('Cache cleared!', '🗑');
+  } catch { toast('Backend offline', '❌'); }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadProfile();
+updateStats();
+renderTracker();
+checkApiStatus();
+setInterval(checkApiStatus, 30000);
+
+// Pre-fill settings inputs from saved config
+document.getElementById('cfg-api').value      = CFG.apiBase;
+document.getElementById('cfg-serpapi').value   = CFG.serpapi;
+document.getElementById('cfg-anthropic').value = CFG.anthropic;
+</script>
+</body>
+</html>
